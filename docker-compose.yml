@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  film:
+    build: ./film
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://database-film:3306/springboot"
+      SPRING_DATASOURCE_DRIVERCLASSNAME: "org.mariadb.jdbc.Driver"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+      SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.MySQLDialect"
+    depends_on:
+      - database-film
+
+  film-repository:
+    build: ./film-repository
+    restart: always
+    environment:
+      FILM_MICROSERVICE_URL: "http://film:8081"
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://database-category:3306/springboot"
+      SPRING_DATASOURCE_DRIVERCLASSNAME: "org.mariadb.jdbc.Driver"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+      SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.MySQLDialect"
+    depends_on:
+      - database-category
+
+  film-gateway:
+    build: ./gateway
+    restart: always
+    environment:
+      FILM_MICROSERVICE_URL: "http://film:8081"
+      FILM_REPOSITORY_MICROSERVICE_URL: "http://film-repository:8082"
+      GATEWAY_HOST: "localhost:8083"
+    ports:
+      - "8083:8083"
+    depends_on:
+      - film
+      - film-repository
+
+  database-film:
+    image: mariadb:11.5
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "springboot"
+    volumes:
+      - db-data-film:/var/lib/mysql
+
+  database-category:
+    image: mariadb:11.5
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "springboot"
+    volumes:
+      - db-data-category:/var/lib/mysql
+
+volumes:
+  db-data-film:
+  db-data-category:
